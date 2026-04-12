@@ -1,5 +1,9 @@
 #include <fstream>
 #include <iostream>
+#include <sstream>
+
+// Variable for determining what we should put for a type when GDScript is unclear
+const std::string TYPE_ANY = "std::any";
 
 // Parses a GDScript into a C++ file to be utilized by Doxygen.
 // Returns True on success and False on fail.
@@ -17,19 +21,17 @@ bool parseFile(const std::string &fileName) {
         if (line.find("func", 0) == 0) {
             std::string lineToReturn = "";
 
-            // Gets the type. Defaults to "void" for now.
+            // Gets the type
             if (int typeLine = line.find("->"); typeLine != std::string::npos) {
                 typeLine += 2;
-                std::string typeString = line.substr(typeLine, line.find(":", 0) - typeLine);
+                std::string typeString = line.substr(typeLine, line.find_last_of(':') - typeLine);
                 std::erase_if(typeString, isspace);
                 lineToReturn += typeString;
             }
             else {
-                lineToReturn += "void";
+                // As GDScript doesn't always specify types, we can instead use C++ std::any for now
+                lineToReturn += TYPE_ANY;
             }
-
-            // We know this is a function, so append "func" here.
-            lineToReturn += " func";
 
             // Gets the function name
             if (int typeLine = line.find("func "); typeLine != std::string::npos) {
@@ -39,7 +41,35 @@ bool parseFile(const std::string &fileName) {
 
             // Gets the function parameters
             if (int typeLine = line.find("("); typeLine != std::string::npos) {
-                lineToReturn += " " + line.substr(typeLine, line.find(")", 0) - typeLine + 1);
+                typeLine += 1;
+                std::string allParams = line.substr(typeLine, line.find(")", 0) - typeLine);
+                std::stringstream ss(allParams);
+                std::string param;
+
+                lineToReturn += '(';
+
+                while (getline(ss, param, ',')) {
+                    if (int paramSeparatorIndex = param.find(':'); paramSeparatorIndex != std::string::npos) {
+                        std::string typeString = param.substr(paramSeparatorIndex + 1, param.length() - paramSeparatorIndex - 1);
+                        std::erase_if(typeString, isspace);
+                        lineToReturn += typeString + " ";
+
+                        typeString = param.substr(0, paramSeparatorIndex);
+                        std::erase_if(typeString, isspace);
+                        lineToReturn += typeString + ", ";
+                    }
+                    else {
+                        lineToReturn += TYPE_ANY + param + ", ";
+                    }
+                }
+
+                // Pop the last ", "
+                if (lineToReturn.ends_with(", ")) {
+                    lineToReturn.pop_back();
+                    lineToReturn.pop_back();
+                }
+
+                lineToReturn += ')';
             }
 
             lineToReturn += ";";
