@@ -1,0 +1,9 @@
+class_name TestFile
+extends Node3D
+
+func _ready() -> void:
+    print("Hello)
+
+
+func _this_is_a_test() -> bool:
+    pass
