@@ -3,10 +3,11 @@
 #include <sstream>
 
 // Variable for determining what we should put for a type when GDScript is unclear
-const std::string TYPE_ANY = "std::any";
+const std::string TYPE_ANY = "unknown";
 
-// Parses a GDScript into a C++ file to be utilized by Doxygen.
-// Returns True on success and False on fail.
+/** Parses a GDScript into a C++ file to be utilized by Doxygen.
+ *  Returns True on success and False on fail.
+ */
 bool parseFile(const std::string &fileName) {
     std::ifstream file(fileName);
 
@@ -73,7 +74,7 @@ bool parseFile(const std::string &fileName) {
             }
 
             lineToReturn += ";";
-            std::cout << lineToReturn << std::endl;
+            std::cout << lineToReturn << "\n";
         }
     }
 
@@ -81,7 +82,8 @@ bool parseFile(const std::string &fileName) {
 }
 
 int main(const int argc, const char *argv[]) {
-    for (int i = 0; i < argc; i++) {
+    // Ignore first argv as that's just the executable
+    for (int i = 1; i < argc; i++) {
         parseFile(argv[i]);
     }
 
