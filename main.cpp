@@ -1,9 +1,12 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 // Variable for determining what we should put for a type when GDScript is unclear
-const std::string TYPE_ANY = "unknown";
+constexpr std::string TYPE_ANY = "unknown";
+
+std::vector<std::string> comments = {};
 
 /** Parses a GDScript into a C++ file to be utilized by Doxygen.
  *  Returns True on success and False on fail.
@@ -21,6 +24,21 @@ bool parseFile(const std::string &fileName) {
         // Checks if it is a function
         if (line.find("func", 0) == 0) {
             std::string lineToReturn = "";
+
+            for (int i = 0; i < comments.size(); i++) {
+                size_t pos = comments[i].find("#", 0);
+                std::string replaceString = "//!";
+
+                while (pos != std::string::npos) {
+                    if (comments[i].starts_with(replaceString)) {
+                        replaceString = "";
+                    }
+
+                    comments[i].replace(pos, 1, replaceString);
+                    pos = comments[i].find("#", pos);
+                }
+                lineToReturn += comments[i] + "\n";
+            }
 
             // Gets the type
             if (int typeLine = line.find("->"); typeLine != std::string::npos) {
@@ -75,6 +93,14 @@ bool parseFile(const std::string &fileName) {
 
             lineToReturn += ";";
             std::cout << lineToReturn << "\n";
+        }
+
+        if (line[0] == '#') {
+            comments.push_back(line);
+        }
+        else if (!std::all_of(line.begin(), line.end(), isspace)) {
+            comments.erase(comments.begin(), comments.end());
+            comments.clear();
         }
     }
 
